@@ -1,0 +1,6 @@
+.vs/
+obj/
+*.user
+*.db
+bin/
+*.opendb
