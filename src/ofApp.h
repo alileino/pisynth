@@ -2,6 +2,7 @@
 
 #include "ofMain.h"
 #include <ofxMidiIn.h>
+#include "Oscillator.h"
 
 class ofApp : public ofBaseApp, ofxMidiListener {
 
@@ -14,9 +15,14 @@ public:
 
 	void audioOut(ofSoundBuffer& buffer) override;
 private:
+	int samplerate = 96000;
 	ofxMidiIn midiIn;
 	ofSoundBuffer lastBuffer;
 	mutex audioMutex;
-	float speed = 1024.f;
+	float freq = 1024.f;
 	ofPolyline waveform;
+	float phase = 0;
+	static const int tableSize = 1024;
+	float sinBuffer[tableSize];
+	TableOscillator* _osc;
 };

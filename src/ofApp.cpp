@@ -9,8 +9,10 @@ void ofApp::setup() {
 
 	midiIn.setVerbose(true);
 	midiIn.addListener(this);
+	samplerate = 48000;
+	ofSoundStreamSetup(2, 0, samplerate, 512, 3);
+	_osc = new TableOscillator(1024, samplerate);
 
-	ofSoundStreamSetup(2, 0, 48000, 512, 3);
 }
 
 void ofApp::update() {
@@ -26,22 +28,22 @@ void ofApp::update() {
 
 void ofApp::draw() {
 	ofBackground(ofColor::black);
-	ofSetColor(ofColor::white);
+//	ofSetColor(ofColor::white);
+	ofSetColor((int)(30*phase) % 256, (int)(15.5*phase) % 256, (int)(22.3*phase) % 256);
 	ofSetLineWidth(1 + (1 * 30.));
 	waveform.draw();
 }
 
 void ofApp::newMidiMessage(ofxMidiMessage& msg) {
-	speed = (msg.pitch - 35) * 50;
+	freq = 440.0*pow(2.0, (msg.pitch - 69.0) / 12.0);
+	_osc->getFreqBinding().update(freq);
 }
 
 void ofApp::audioOut(ofSoundBuffer& buffer) {
-	int x = 0;
+	vector<float> oscbuf = vector<float>(buffer.getNumFrames());
+	_osc->play(oscbuf, 0, oscbuf.size());
 	for (size_t i = 0; i < buffer.getNumFrames(); i++) {
-		x += 1;
-		if (x > speed)
-			x = 0;
-		float val = x / speed*2.0 - 1.0;
+		float val = oscbuf[i];
 		buffer.getSample(i, 0) = val;
 		buffer.getSample(i, 1) = val;
 	}

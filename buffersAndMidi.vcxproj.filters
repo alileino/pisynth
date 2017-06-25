@@ -89,6 +89,9 @@
     <ClInclude Include="..\..\..\addons\ofxMidi\libs\rtmidi\RtMidi.h">
       <Filter>addons\ofxMidi\libs\rtmidi</Filter>
     </ClInclude>
+    <ClInclude Include="src\Oscillator.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="icon.rc" />
