@@ -15,14 +15,10 @@ public:
 
 	void audioOut(ofSoundBuffer& buffer) override;
 private:
-	int samplerate = 96000;
+	int samplerate = 48000;
 	ofxMidiIn midiIn;
 	ofSoundBuffer lastBuffer;
 	mutex audioMutex;
-	float freq = 1024.f;
 	ofPolyline waveform;
-	float phase = 0;
-	static const int tableSize = 1024;
-	float sinBuffer[tableSize];
 	TableOscillator* _osc;
 };

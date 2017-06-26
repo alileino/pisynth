@@ -72,7 +72,7 @@ public:
 		_sr = sampleRate;
 		vector<float>* sine = new vector<float>(tableSize);
 		float increment = 2 * PI / _tableSize;
-		for(int i = 0; i < _tableSize; i++)
+		for (int i = 0; i < _tableSize; i++)
 		{
 			(*sine)[i] = sin(i*increment);
 		}
@@ -90,16 +90,33 @@ public:
 	{
 		float freqOld, freqNew;
 		std::tie(freqOld, freqNew) = _freq.consume();
-		float incrBase = _tableSize /  _sr;
+		float incrBase = _tableSize / _sr;
 		vector<float> t = *_current;
-		for(int i = 0; i < count; i++)
+		for (int i = 0; i < count; i++)
 		{
 			float k = -(t[(int)_phase % _tableSize] - t[(int)(_phase + 1) % _tableSize]);
 			float val = t[(int)_phase % _tableSize] + k*(_phase - (int)_phase);
 			buffer[pos + i] = val;
 			_phase += incrBase*freqNew;
 		}
+	}
 
+	float play(bool consume)
+	{
+		float freqOld, freqNew;
+		tie(freqOld, freqNew) = _freq.consume();
+
+		const vector<float> &t = *_current;
+		int phasei = (int)_phase;
+		float k = t[(phasei + 1) % _tableSize]- t[phasei % _tableSize];
+		float val = t[phasei % _tableSize] + k*(_phase - phasei);
+		
+		if (consume) {
+
+			float incr = freqNew * _tableSize / _sr;
+			_phase += incr;
+		}
+		return val;
 	}
 
 	~TableOscillator()
