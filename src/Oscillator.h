@@ -1,76 +1,50 @@
 #pragma once
 #include <vector>
+#include "Utils.h"
+#include <utils/ofConstants.h>
 
-template <typename T>
-T clip(const T& n, const T& lower, const T& upper) {
-	return std::max(lower, std::min(n, upper));
-}
-enum ParamNames
+
+class TableOscillator : public SignalGeneratorAbstract, SignalConsumerAbstract
 {
-	FREQ
-};
-
-template<typename T>
-class ParamBinding
-{
-public:
-
-	ParamBinding(T initialValue, T minValue, T maxValue)
+protected:
+	void produce(vector<float>& dest) override 
 	{
-		_newValue = _oldValue = clip(initialValue, minValue, maxValue);
-		
-		_minValue = minValue;
-		_maxValue = maxValue;
+		vector<float> freq = _freq.play(0);
+		float incrBase = _tableSize / _sr;
+		vector<float>& t = *_current;
+		for (size_t i = 0; i < dest.size(); i++)
+		{
+			int p = int(_phase);
+			float tableCur = t[p % _tableSize];
+			float tableNext = t[(p + 1) % _tableSize];
+			// Linear interpolation
+			float k = tableNext - tableCur;
+			float val = tableCur + k*(_phase - p);
+			dest[i] = val;
+			_phase += incrBase*freq[0];
+		}
 	}
-
-	void update(T newValue)
-	{
-		T result = clip(newValue, _minValue, _maxValue);
-		unique_lock<mutex> lock(_mutex);
-		_newValue = result;
-	}
-
-	tuple<T, T> consume()
-	{
-		unique_lock<mutex> lock(_mutex);
-		T old = _oldValue;
-		_oldValue = _newValue;
-		return std::make_tuple(old, _newValue);
-	}
-
-	T peek()
-	{
-		return _newValue;
-	}
-
-	T getMin() { return _minValue; }
-	T getMax() { return _maxValue; }
-
 private:
-	T _newValue;
-	T _oldValue;
-	T _minValue;
-	T _maxValue;
-	mutex _mutex;
-};
-
-
-class TableOscillator
-{
-private:
-	ParamBinding<float> _freq;
 	double _phase = 0.0;
 	int _tableSize;
 	float _sr;
 	vector<float>* _current;
+
+	SignalGeneratorAbstract& _freq;
+
+
+	static ConstantGenerator defaultFrequency;
+
 public:
 
-	TableOscillator(int tableSize, float sampleRate)
-		: _freq(440.0f, 1.0f, 96000.0f)
+
+	TableOscillator(int tableSize, float sampleRate, int bufferSize)
+		: SignalGeneratorAbstract(bufferSize),
+		_freq(defaultFrequency)
 	{
 		_tableSize = tableSize;
 		_sr = sampleRate;
-		vector<float>* sine = new vector<float>(tableSize);
+		std::vector<float>* sine = new std::vector<float>(tableSize);
 		float increment = 2 * PI / _tableSize;
 		for (int i = 0; i < _tableSize; i++)
 		{
@@ -80,44 +54,44 @@ public:
 	}
 
 
-	ParamBinding<float>& getFreqBinding()
+	void addSource(SignalGeneratorAbstract& source, ParamName param) override
 	{
-		return _freq;
+		_freq = source;
 	}
-
-	// TODO: Frequency interpolation
-	void play(std::vector<float> &buffer, int pos, int count)
-	{
-		float freqOld, freqNew;
-		std::tie(freqOld, freqNew) = _freq.consume();
-		float incrBase = _tableSize / _sr;
-		vector<float> t = *_current;
-		for (int i = 0; i < count; i++)
-		{
-			float k = -(t[(int)_phase % _tableSize] - t[(int)(_phase + 1) % _tableSize]);
-			float val = t[(int)_phase % _tableSize] + k*(_phase - (int)_phase);
-			buffer[pos + i] = val;
-			_phase += incrBase*freqNew;
-		}
-	}
-
-	float play(bool consume)
-	{
-		float freqOld, freqNew;
-		tie(freqOld, freqNew) = _freq.consume();
-
-		const vector<float> &t = *_current;
-		int phasei = (int)_phase;
-		float k = t[(phasei + 1) % _tableSize]- t[phasei % _tableSize];
-		float val = t[phasei % _tableSize] + k*(_phase - phasei);
-		
-		if (consume) {
-
-			float incr = freqNew * _tableSize / _sr;
-			_phase += incr;
-		}
-		return val;
-	}
+//
+//	// TODO: Frequency interpolation
+//	void play(std::vector<float> &buffer, int pos, int count)
+//	{
+//		float freqOld, freqNew;
+//		std::tie(freqOld, freqNew) = _freq.consume();
+//		float incrBase = _tableSize / _sr;
+//		vector<float> t = *_current;
+//		for (int i = 0; i < count; i++)
+//		{
+//			float k = -(t[(int)_phase % _tableSize] - t[(int)(_phase + 1) % _tableSize]);
+//			float val = t[(int)_phase % _tableSize] + k*(_phase - (int)_phase);
+//			buffer[pos + i] = val;
+//			_phase += incrBase*freqNew;
+//		}
+//	}
+//
+//	float play(bool consume)
+//	{
+//		float freqOld, freqNew;
+//		tie(freqOld, freqNew) = _freq.consume();
+//
+//		const vector<float> &t = *_current;
+//		int phasei = (int)_phase;
+//		float k = t[(phasei + 1) % _tableSize]- t[phasei % _tableSize];
+//		float val = t[phasei % _tableSize] + k*(_phase - phasei);
+//		
+//		if (consume) {
+//
+//			float incr = freqNew * _tableSize / _sr;
+//			_phase += incr;
+//		}
+//		return val;
+//	}
 
 	~TableOscillator()
 	{

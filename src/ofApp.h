@@ -11,6 +11,7 @@ public:
 	void update() override;
 	void draw() override;
 
+	void keyPressed(int key) override;
 	void newMidiMessage(ofxMidiMessage& msg) override;
 
 	void audioOut(ofSoundBuffer& buffer) override;
@@ -21,4 +22,5 @@ private:
 	mutex audioMutex;
 	ofPolyline waveform;
 	TableOscillator* _osc;
+	int _curTick = 0;
 };

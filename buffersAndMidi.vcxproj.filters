@@ -31,6 +31,9 @@
     <ClCompile Include="..\..\..\addons\ofxMidi\libs\rtmidi\RtMidi.cpp">
       <Filter>addons\ofxMidi\libs\rtmidi</Filter>
     </ClCompile>
+    <ClCompile Include="src\Oscillator.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
@@ -90,6 +93,9 @@
       <Filter>addons\ofxMidi\libs\rtmidi</Filter>
     </ClInclude>
     <ClInclude Include="src\Oscillator.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Utils.h">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>

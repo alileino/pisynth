@@ -11,7 +11,7 @@ void ofApp::setup() {
 	midiIn.addListener(this);
 	samplerate = 48000;
 	ofSoundStreamSetup(2, 0, samplerate, 512, 3);
-	_osc = new TableOscillator(1024, samplerate);
+	_osc = new TableOscillator(1024, samplerate, 512);
 
 }
 
@@ -34,21 +34,33 @@ void ofApp::draw() {
 	waveform.draw();
 }
 
+void ofApp::keyPressed(int key)
+{
+
+	ofBaseApp::keyPressed(key);
+	if (key == 27)
+		ofExit();
+}
+
 void ofApp::newMidiMessage(ofxMidiMessage& msg) {
 	float freq = 440.0*pow(2.0, (msg.pitch - 69.0) / 12.0);
-	_osc->getFreqBinding().update(freq);
+//	_osc->getFreqBinding().update(freq);
 }
 
 void ofApp::audioOut(ofSoundBuffer& buffer) {
-
+	
+	
 //	vector<float> oscbuf = vector<float>(buffer.getNumFrames());
 //	_osc->play(oscbuf, 0, oscbuf.size());
 
+	unique_lock<mutex> lock(audioMutex);
+
+	vector<float>& oscb = _osc->play(_curTick);
 	for (size_t i = 0; i < buffer.getNumFrames(); i++) {
-		float val = _osc->play(true);
+		float val = oscb[i];
 		buffer.getSample(i, 0) = val;
 		buffer.getSample(i, 1) = val;
 	}
-	unique_lock<mutex> lock(audioMutex);
 	lastBuffer = buffer;
+	_curTick++;
 }
