@@ -7,9 +7,9 @@
 class TableOscillator : public SignalGeneratorAbstract, SignalConsumerAbstract
 {
 protected:
-	void produce(vector<float>& dest) override 
+	void produce(vector<float>& dest, int tick) override 
 	{
-		vector<float> freq = _freq.play(0);
+		vector<float> freq = _freq->play(tick);
 		float incrBase = _tableSize / _sr;
 		vector<float>& t = *_current;
 		for (size_t i = 0; i < dest.size(); i++)
@@ -21,7 +21,7 @@ protected:
 			float k = tableNext - tableCur;
 			float val = tableCur + k*(_phase - p);
 			dest[i] = val;
-			_phase += incrBase*freq[0];
+			_phase += incrBase*freq[p%freq.size()];
 		}
 	}
 private:
@@ -30,17 +30,16 @@ private:
 	float _sr;
 	vector<float>* _current;
 
-	SignalGeneratorAbstract& _freq;
+	shared_ptr<SignalGeneratorAbstract> _freq;
 
 
 	static ConstantGenerator defaultFrequency;
 
 public:
-
-
+	
 	TableOscillator(int tableSize, float sampleRate, int bufferSize)
 		: SignalGeneratorAbstract(bufferSize),
-		_freq(defaultFrequency)
+		_freq(new ConstantGenerator(440.f))
 	{
 		_tableSize = tableSize;
 		_sr = sampleRate;
@@ -51,47 +50,17 @@ public:
 			(*sine)[i] = sin(i*increment);
 		}
 		_current = sine;
+
+		cout << this << "Freq bound to " << _freq.get() << endl;
 	}
 
 
-	void addSource(SignalGeneratorAbstract& source, ParamName param) override
+	void addSource(const shared_ptr<SignalGeneratorAbstract>& source, ParamName param) override
 	{
 		_freq = source;
+		cout << this << "Freq REbound to " << (_freq.get()) << endl;
 	}
-//
-//	// TODO: Frequency interpolation
-//	void play(std::vector<float> &buffer, int pos, int count)
-//	{
-//		float freqOld, freqNew;
-//		std::tie(freqOld, freqNew) = _freq.consume();
-//		float incrBase = _tableSize / _sr;
-//		vector<float> t = *_current;
-//		for (int i = 0; i < count; i++)
-//		{
-//			float k = -(t[(int)_phase % _tableSize] - t[(int)(_phase + 1) % _tableSize]);
-//			float val = t[(int)_phase % _tableSize] + k*(_phase - (int)_phase);
-//			buffer[pos + i] = val;
-//			_phase += incrBase*freqNew;
-//		}
-//	}
-//
-//	float play(bool consume)
-//	{
-//		float freqOld, freqNew;
-//		tie(freqOld, freqNew) = _freq.consume();
-//
-//		const vector<float> &t = *_current;
-//		int phasei = (int)_phase;
-//		float k = t[(phasei + 1) % _tableSize]- t[phasei % _tableSize];
-//		float val = t[phasei % _tableSize] + k*(_phase - phasei);
-//		
-//		if (consume) {
-//
-//			float incr = freqNew * _tableSize / _sr;
-//			_phase += incr;
-//		}
-//		return val;
-//	}
+
 
 	~TableOscillator()
 	{

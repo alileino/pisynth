@@ -3,6 +3,7 @@
 #include "ofMain.h"
 #include <ofxMidiIn.h>
 #include "Oscillator.h"
+#include "../MidiDevice.h"
 
 class ofApp : public ofBaseApp, ofxMidiListener {
 
@@ -17,10 +18,10 @@ public:
 	void audioOut(ofSoundBuffer& buffer) override;
 private:
 	int samplerate = 48000;
-	ofxMidiIn midiIn;
+	MidiManager _midi;
 	ofSoundBuffer lastBuffer;
 	mutex audioMutex;
 	ofPolyline waveform;
-	TableOscillator* _osc;
+	shared_ptr<SignalGeneratorAbstract> _osc;
 	int _curTick = 0;
 };

@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cassert>
+#include <memory>
+#include <iostream>
 
 #ifdef DEBUG
 #define DEBUG_IF(x) if(x)
@@ -35,11 +37,13 @@ private:
 
 	int _curTick = -1;
 	std::vector<float> _buffer;
-	int _bufferSize;
+	size_t _bufferSize;
+
+	SignalGeneratorAbstract(const SignalGeneratorAbstract& that);
 public:
 
 
-	SignalGeneratorAbstract(int bufferSize)
+	SignalGeneratorAbstract(size_t bufferSize)
 		:_buffer(bufferSize)
 	{
 		_bufferSize = bufferSize;
@@ -50,19 +54,31 @@ public:
 		if (tick > _curTick)
 		{
 			_curTick = tick;
-			produce(_buffer);
-			assert(_buffer.size() != _bufferSize);
+
+			assert(_buffer.size() == _bufferSize);
+			produce(_buffer, tick);
 		}
 
 		return _buffer;
 	}
 	virtual ~SignalGeneratorAbstract()
 	{
+		std::cout << this << "destroyed" << std::endl;
+
 	}
 
 protected:
+	void freeze()
+	{
+		_curTick = std::numeric_limits<int>::max();
+	}
 
-	virtual void produce(std::vector<float>& dest) = 0;
+	void unfreeze()
+	{
+		_curTick = std::numeric_limits<int>::min();
+	}
+
+	virtual void produce(std::vector<float>& dest, int curTick) = 0;
 
 	//	virtual void reset() = 0;
 };
@@ -79,7 +95,7 @@ public:
 	{
 	}
 
-	virtual void addSource(SignalGeneratorAbstract& source, ParamName param) = 0;
+	virtual void addSource(const std::shared_ptr<SignalGeneratorAbstract>& source, ParamName param) = 0;
 	virtual std::vector<ParamName> getParams() {
 		return std::vector<ParamName>();
 	}
@@ -97,9 +113,16 @@ public:
 	{
 	}
 
+	void setValue(float value)
+	{
+		_value = value;
+		unfreeze();
+	}
+
 protected:
-	void produce(std::vector<float>& dest) override {
+	void produce(std::vector<float>& dest, int tick) override {
 		dest[0] = _value;
+		freeze();
 	}
 };
 
@@ -111,5 +134,5 @@ class InterpolatingGenerator : public SignalGeneratorAbstract
 	}
 
 protected:
-	void produce(std::vector<float>& dest) override;
+	void produce(std::vector<float>& dest, int tick) override;
 };
