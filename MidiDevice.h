@@ -1,5 +1,5 @@
 #pragma once
-#include <ofxMidi/src/ofxMidiIn.h>
+
 #include <unordered_set>
 #include "src/Utils.h"
 
@@ -75,7 +75,7 @@ class MidiManager
 		void Init()
 		{
 			midiIn.listPorts();
-			midiIn.openPort(0);
+			midiIn.openPort(1);
 			midiIn.ignoreTypes(false, false, false);
 			
 			midiIn.setVerbose(true);
