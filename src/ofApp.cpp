@@ -15,9 +15,11 @@ void ofApp::setup() {
 //	midiIn.addListener(this);
 	_midi.Init(_settings);
 //	_osc.reset(new TableOscillatorTest(1024, , 1));
-//	ofSoundStreamSetup(2, 0, _settings.sampleRate, _settings.bufferSize, 3);
-//	_osc.reset(new TableOscillator(_settings, 1024));
-//	static_cast<TableOscillator*>(_osc.get())->addSource(_midi.getDevice().get()->gen, FREQ);
+	ofSoundStreamSetup(2, 0, _settings.sampleRate, _settings.bufferSize, 3);
+	_osc.reset(new TableOscillator(_settings, 1024));
+	TableOscillator* myosc = static_cast<TableOscillator*>(_osc.get());
+	myosc->addSource(_midi.getDevice().get()->gen, FREQ);
+	_midi.getDevice()->adsr->addSource(_osc, SIGNAL);
 //	shared_ptr<SignalGeneratorAbstract> osc2(nullptr);
 //	osc2.reset(new TableOscillator(512, samplerate, 512));
 //	static_cast<TableOscillator*>(_osc.get())->addSource(osc2, FREQ);
@@ -26,12 +28,12 @@ void ofApp::setup() {
 void ofApp::update() {
 	unique_lock<mutex> lock(audioMutex);
 	waveform.clear();
-//	for (size_t i = 0; i < lastBuffer.getNumFrames(); i++) {
-//		float sample = lastBuffer.getSample(i, 0);
-//		float x = ofMap(i, 0, lastBuffer.getNumFrames(), 0, ofGetWidth());
-//		float y = ofMap(sample, -1, 1, 0, ofGetHeight());
-//		waveform.addVertex(x, y);
-//	}
+	for (size_t i = 0; i < lastBuffer.getNumFrames(); i++) {
+		float sample = lastBuffer.getSample(i, 0);
+		float x = ofMap(i, 0, lastBuffer.getNumFrames(), 0, ofGetWidth());
+		float y = ofMap(sample, -1, 1, 0, ofGetHeight());
+		waveform.addVertex(x, y);
+	}
 }
 
 void ofApp::draw() {
@@ -64,9 +66,10 @@ void ofApp::audioOut(ofSoundBuffer& buffer) {
 
 	unique_lock<mutex> lock(audioMutex);
 
-	vector<float>& oscb = _osc->play(_curTick);
+	const vector<float>& oscb = _midi.getDevice()->adsr->play(_curTick);
+//		_osc->play(_curTick);
 	for (size_t i = 0; i < buffer.getNumFrames(); i++) {
-		float val = oscb[i];
+		float val = oscb[i%oscb.size()];
 		buffer.getSample(i, 0) = val;
 		buffer.getSample(i, 1) = val;
 	}

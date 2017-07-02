@@ -6,9 +6,15 @@
 
 class MidiDevice : public ofxMidiListener
 {
+	shared_ptr<ConstantGenerator> _attack;
+	shared_ptr<ConstantGenerator> _decay;
+	shared_ptr<ConstantGenerator> _sustain;
+	shared_ptr<ConstantGenerator> _release;
 public:
 
 	shared_ptr<ConstantGenerator> gen;
+	shared_ptr<ASDRProcessor> adsr;
+	
 
 	void newMidiMessage(ofxMidiMessage& msg) override
 	{
@@ -44,19 +50,35 @@ public:
 			notesOn.erase(find(notesOn.begin(), notesOn.end(), msg.pitch));
 		}
 		cout << notesOn.size() << " notes ON" << endl;
-		int last = notesOn.back();
-		float freq = 440.0*pow(2.0, (last - 69.0) / 12.0);
-		gen->setValue(freq);
+		if (notesOn.size() > 0) {
+			int last = notesOn.back();
+			float freq = 440.0*pow(2.0, (last - 69.0) / 12.0);
+			gen->setValue(freq);
+			adsr->attack();
+		}
+		else
+		{
+			adsr->release();
+		}
+
 	}
 
 
-
-	MidiDevice(const DSPSettings& settings)
-		: gen(new ConstantGenerator(settings, 0))
+	explicit MidiDevice(const DSPSettings& settings)
+		: _attack(new ConstantGenerator(settings, 2)),
+		_decay(new ConstantGenerator(settings, 2)),
+		_sustain(new ConstantGenerator(settings, 0.5)),
+		_release(new ConstantGenerator(settings, 2)),
+		gen(new ConstantGenerator(settings, 0)),
+		adsr(new ASDRProcessor(settings))
 	{
-
+		std::cout << "Construct\n";
+		adsr->addSource(_attack, ATTACK);
+		adsr->addSource(_decay, DECAY);
+		adsr->addSource(_sustain, SUSTAIN);
+		adsr->addSource(_release, RELEASE);
 	}
-
+	MidiDevice() = delete;
 	MidiDevice(MidiDevice const&) = delete;
 	void operator=(MidiDevice const&) = delete;
 };

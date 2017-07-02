@@ -67,7 +67,7 @@ public:
 		{
 			_curTick = tick;
 
-			assert(_buffer.size() == _settings.bufferSize);
+//			assert(_buffer.size() == _settings.bufferSize);
 			produce(_buffer, tick);
 		}
 
@@ -99,9 +99,18 @@ protected:
 	//	virtual void reset() = 0;
 };
 
+
 enum ParamName
 {
-	FREQ
+	FREQ,
+	AMPLITUDE,
+	SIGNAL,
+	DELAY,
+	ATTACK,
+	HOLD,
+	DECAY,
+	SUSTAIN,
+	RELEASE
 };
 
 class SignalConsumerAbstract
@@ -136,20 +145,171 @@ public:
 		unfreeze();
 	}
 
+	float getValue() { return _value; }
+
 protected:
 	void produce(std::vector<float>& dest, int tick) override {
+		assert(dest.size() == 1);
 		dest[0] = _value;
 		freeze();
 	}
 };
 
-class InterpolatingGenerator : public SignalGeneratorAbstract
+class SignalProcessor : public SignalConsumerAbstract
+{ 
+protected:
+	std::shared_ptr<SignalGeneratorAbstract> _source;
+
+public:
+	SignalProcessor(const DSPSettings& settings)
+		: _source(new ConstantGenerator(settings, 0.f))
+	{}
+
+	virtual ~SignalProcessor()
+	{}
+
+	virtual void addSource(const std::shared_ptr<SignalGeneratorAbstract>& source, ParamName param) override
+	{
+		_source = source;
+	}
+
+
+	virtual const std::vector<float>& play(int curTick) = 0;
+};
+
+class ASDRProcessor : public SignalProcessor
 {
-	explicit InterpolatingGenerator(int bufferSize)
-		: SignalGeneratorAbstract(bufferSize)
+	std::shared_ptr<SignalGeneratorAbstract> _attack;
+	std::shared_ptr<SignalGeneratorAbstract> _decay;
+	std::shared_ptr<SignalGeneratorAbstract> _sustain;
+	std::shared_ptr<SignalGeneratorAbstract> _release;
+
+	const float _deltaT;
+	int _curEnvelope = 0;
+	float _phase = 0.f;
+	std::vector<float> _silence = {0};
+
+	enum EnvelopePhase
+	{
+		NONE   =0,
+		ATTACK =1,
+		DECAY  =2,
+		SUSTAIN=3,
+		RELEASE=4
+	};
+
+	int linearApply(std::vector<float>& src, 
+		const std::shared_ptr<SignalGeneratorAbstract>& signal,
+		int curTick, int pos, float k, float intercept)
+	{
+		std::cout << _curEnvelope << " " << pos << " " << _phase << " k" << k << std::endl;
+		float value = signal->play(curTick)[0];
+		for (int i = pos; i < src.size(); ++i)
+		{
+			if (_phase > value)
+			{
+				return i;
+			}
+			float mult = intercept + k*_phase / value;
+			src[i] *= mult;
+			_phase += _deltaT;
+		}
+		return src.size();
+	}
+
+	void applySustain(std::vector<float>& src, int curTick)
+	{
+		const float mult = _sustain->play(curTick)[0];
+		for(int i = 0; i < src.size(); i++)
+		{
+			src[i] *= mult;
+		}
+	}
+
+	void applyEnvelope(std::vector<float>& src, int curTick)
+	{
+		if (_curEnvelope == NONE)
+			return;
+		int pos = 0;
+		while(pos < src.size())
+		{
+			switch(_curEnvelope)
+			{
+			case ATTACK:
+				pos = linearApply(src, _attack, curTick, pos, 1, 0);
+				break;
+			case DECAY:
+				pos = linearApply(src, _decay, curTick, pos, -1+_sustain->play(curTick)[0], 1);
+				break;
+			case SUSTAIN:
+				applySustain(src, curTick);
+				return;
+			case RELEASE:
+				pos = linearApply(src, _release, curTick, pos, -0.5, _sustain->play(curTick)[0]);
+				break;
+			}
+			if(pos < src.size())
+			{
+				_phase = 0;
+				if(_curEnvelope == RELEASE)
+				{
+					_curEnvelope = 0;
+					return;
+				}
+				_curEnvelope++;
+			}
+		}
+	}
+public:
+	ASDRProcessor(const DSPSettings& settings)
+		: SignalProcessor(settings),
+		_deltaT(1.f/settings.sampleRate),
+		_attack(new ConstantGenerator(settings, 0.f)),
+		_curEnvelope(NONE)
 	{
 	}
 
+	void attack()
+	{
+		_curEnvelope = ATTACK;
+	}
+	
+	void release()
+	{
+		_phase = 0;
+		_curEnvelope = RELEASE;
+	}
+
+	const std::vector<float>& play(int curTick) override
+	{
+		if (_curEnvelope != NONE) {
+			std::vector<float>& src = _source->play(curTick);
+			applyEnvelope(src, curTick);
+			return src;
+		}
+		return _silence;
+	}
+
+
+	void addSource(const std::shared_ptr<SignalGeneratorAbstract>& source, ParamName param) override {
+
+		switch(param)
+		{
+		case ParamName::ATTACK:
+				_attack = source;
+				break;
+		case ParamName::DECAY:
+			_decay = source;
+			break;
+		case ParamName::SUSTAIN:
+			_sustain = source;
+			break;
+		case ParamName::RELEASE:
+			_release = source;
+			break;
+		default:
+			SignalProcessor::addSource(source, param);
+		}
+	}
 protected:
-	void produce(std::vector<float>& dest, int tick) override;
 };
