@@ -217,10 +217,10 @@ class ASDRProcessor : public SignalProcessor
 		return src.size();
 	}
 
-	void applySustain(std::vector<float>& src, int curTick)
+	void applySustain(std::vector<float>& src, int curTick, int pos)
 	{
 		const float mult = _sustain->play(curTick)[0];
-		for(int i = 0; i < src.size(); i++)
+		for(int i = pos; i < src.size(); i++)
 		{
 			src[i] *= mult;
 		}
@@ -242,7 +242,7 @@ class ASDRProcessor : public SignalProcessor
 				pos = linearApply(src, _decay, curTick, pos, -1+_sustain->play(curTick)[0], 1);
 				break;
 			case SUSTAIN:
-				applySustain(src, curTick);
+				applySustain(src, curTick, pos);
 				return;
 			case RELEASE:
 				pos = linearApply(src, _release, curTick, pos, -0.5, _sustain->play(curTick)[0]);
@@ -253,6 +253,7 @@ class ASDRProcessor : public SignalProcessor
 				_phase = 0;
 				if(_curEnvelope == RELEASE)
 				{
+					std::fill(src.begin() + pos, src.end(), 0);
 					_curEnvelope = 0;
 					return;
 				}
