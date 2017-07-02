@@ -37,7 +37,9 @@
     <ClCompile Include="src\tests.h">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="MidiDevice.cpp" />
+    <ClCompile Include="src\MidiDevice.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
@@ -102,7 +104,9 @@
     <ClInclude Include="src\Utils.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="MidiDevice.h" />
+    <ClInclude Include="src\MidiDevice.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="icon.rc" />

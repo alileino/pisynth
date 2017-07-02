@@ -177,7 +177,7 @@
     <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="MidiDevice.cpp" />
+    <ClCompile Include="src\MidiDevice.cpp" />
     <ClCompile Include="src\Oscillator.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\ofApp.cpp" />
@@ -192,7 +192,7 @@
     <ClCompile Include="src\tests.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="MidiDevice.h" />
+    <ClInclude Include="src\MidiDevice.h" />
     <ClInclude Include="src\Oscillator.h" />
     <ClInclude Include="src\ofApp.h" />
     <ClInclude Include="..\..\..\addons\ofxMidi\src\desktop\ofxRtMidiIn.h" />

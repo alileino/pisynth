@@ -3,7 +3,7 @@
 #include "ofMain.h"
 #include <ofxMidiIn.h>
 #include "Oscillator.h"
-#include "../MidiDevice.h"
+#include "MidiDevice.h"
 
 class ofApp : public ofBaseApp, ofxMidiListener {
 
@@ -17,7 +17,7 @@ public:
 
 	void audioOut(ofSoundBuffer& buffer) override;
 private:
-	int samplerate = 48000;
+	DSPSettings _settings;
 	MidiManager _midi;
 	ofSoundBuffer lastBuffer;
 	mutex audioMutex;

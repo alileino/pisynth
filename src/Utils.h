@@ -10,6 +10,12 @@
 #define DEBUG_IF(x) if(false)
 #endif
 
+struct DSPSettings
+{
+	float sampleRate;
+	int bufferSize;
+};
+
 class Utils
 {
 public:
@@ -28,25 +34,31 @@ T clip(const T& n, const T& lower, const T& upper) {
 	return std::max(lower, std::min(n, upper));
 }
 
-
-
-
 class SignalGeneratorAbstract
 {
 private:
 
 	int _curTick = -1;
 	std::vector<float> _buffer;
-	size_t _bufferSize;
+protected:
+	const DSPSettings& _settings;
 
-	SignalGeneratorAbstract(const SignalGeneratorAbstract& that);
 public:
 
+	SignalGeneratorAbstract(const SignalGeneratorAbstract& that) = delete;
+	SignalGeneratorAbstract() = delete;
 
-	SignalGeneratorAbstract(size_t bufferSize)
-		:_buffer(bufferSize)
+	SignalGeneratorAbstract(const DSPSettings& settings)
+		:_buffer(settings.bufferSize),
+		_settings(settings)
 	{
-		_bufferSize = bufferSize;
+	}
+
+	SignalGeneratorAbstract(const DSPSettings& settings, int bufferSize)
+		:_buffer(bufferSize),
+		_settings(settings)
+	{
+		
 	}
 
 	std::vector<float>& play(int tick)
@@ -55,7 +67,7 @@ public:
 		{
 			_curTick = tick;
 
-			assert(_buffer.size() == _bufferSize);
+			assert(_buffer.size() == _settings.bufferSize);
 			produce(_buffer, tick);
 		}
 
@@ -64,7 +76,11 @@ public:
 	virtual ~SignalGeneratorAbstract()
 	{
 		std::cout << this << "destroyed" << std::endl;
+	}
 
+	const DSPSettings& getSettings() const
+	{
+		return _settings;
 	}
 
 protected:
@@ -107,8 +123,9 @@ class ConstantGenerator : public SignalGeneratorAbstract
 private:
 	float _value;
 public:
-	explicit ConstantGenerator(float value = 440.f)
-		: SignalGeneratorAbstract(1),
+	ConstantGenerator() = delete;
+	explicit ConstantGenerator(const DSPSettings& settings, float value = 440.f)
+		: SignalGeneratorAbstract(settings, 1),
 		_value(value)
 	{
 	}

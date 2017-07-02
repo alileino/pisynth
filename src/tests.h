@@ -21,12 +21,12 @@ protected:
 private:
 	vector<TableOscillator*> oscs;
 public:
-	explicit TableOscillatorTest(int tableSize, int sampleRate, int bufferSize, int numosc)
-		: SignalGeneratorAbstract(bufferSize)
+	explicit TableOscillatorTest(const DSPSettings& settings, int tableSize, int numosc)
+		: SignalGeneratorAbstract(settings)
 	{
 		for (int i = 0; i < numosc; i++)
 		{
-			oscs.push_back(new TableOscillator(tableSize, sampleRate, bufferSize));
+			oscs.push_back(new TableOscillator(settings, tableSize));
 		}
 	}
 };

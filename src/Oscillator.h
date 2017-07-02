@@ -37,12 +37,12 @@ private:
 
 public:
 	
-	TableOscillator(int tableSize, float sampleRate, int bufferSize)
-		: SignalGeneratorAbstract(bufferSize),
-		_freq(new ConstantGenerator(440.f))
+	TableOscillator(const DSPSettings& settings, int tableSize)
+		: SignalGeneratorAbstract(settings),
+		_freq(new ConstantGenerator(settings, 440.f))
 	{
 		_tableSize = tableSize;
-		_sr = sampleRate;
+		_sr = settings.sampleRate;
 		std::vector<float>* sine = new std::vector<float>(tableSize);
 		float increment = 2 * PI / _tableSize;
 		for (int i = 0; i < _tableSize; i++)

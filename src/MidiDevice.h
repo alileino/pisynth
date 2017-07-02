@@ -1,13 +1,14 @@
 #pragma once
 
 #include <unordered_set>
-#include "src/Utils.h"
+#include "Utils.h"
+#include <ofxMidi.h>
 
 class MidiDevice : public ofxMidiListener
 {
 public:
 
-	shared_ptr<ConstantGenerator> gen = make_shared<ConstantGenerator>();
+	shared_ptr<ConstantGenerator> gen;
 
 	void newMidiMessage(ofxMidiMessage& msg) override
 	{
@@ -50,7 +51,11 @@ public:
 
 
 
-	MidiDevice() {}
+	MidiDevice(const DSPSettings& settings)
+		: gen(new ConstantGenerator(settings, 0))
+	{
+
+	}
 
 	MidiDevice(MidiDevice const&) = delete;
 	void operator=(MidiDevice const&) = delete;
@@ -72,14 +77,14 @@ class MidiManager
 			return _devices.front();
 		}
 
-		void Init()
+		void Init(const DSPSettings& settings)
 		{
 			midiIn.listPorts();
-			midiIn.openPort(1);
+			midiIn.openPort(0);
 			midiIn.ignoreTypes(false, false, false);
 			
 			midiIn.setVerbose(true);
-			_devices.push_back(make_shared<MidiDevice>());
+			_devices.push_back(make_shared<MidiDevice>(settings));
 			midiIn.addListener(_devices[0].get());
 		}
 };

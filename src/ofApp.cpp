@@ -4,6 +4,8 @@
 
 void ofApp::setup() {
 	ofSetLogLevel(OF_LOG_VERBOSE);
+	_settings.sampleRate = 48000;
+	_settings.bufferSize = 512;
 //
 //	midiIn.listPorts();
 //	midiIn.openPort(0);
@@ -11,12 +13,11 @@ void ofApp::setup() {
 //
 //	midiIn.setVerbose(true);
 //	midiIn.addListener(this);
-	samplerate = 48000;
-	_midi.Init();
-//	_osc.reset(new TableOscillatorTest(1024, samplerate, 512, 1));
-	ofSoundStreamSetup(2, 0, samplerate, 512, 3);
-	_osc.reset(new TableOscillator(1024, samplerate, 512));
-	static_cast<TableOscillator*>(_osc.get())->addSource(_midi.getDevice().get()->gen, FREQ);
+	_midi.Init(_settings);
+//	_osc.reset(new TableOscillatorTest(1024, , 1));
+//	ofSoundStreamSetup(2, 0, _settings.sampleRate, _settings.bufferSize, 3);
+//	_osc.reset(new TableOscillator(_settings, 1024));
+//	static_cast<TableOscillator*>(_osc.get())->addSource(_midi.getDevice().get()->gen, FREQ);
 //	shared_ptr<SignalGeneratorAbstract> osc2(nullptr);
 //	osc2.reset(new TableOscillator(512, samplerate, 512));
 //	static_cast<TableOscillator*>(_osc.get())->addSource(osc2, FREQ);
