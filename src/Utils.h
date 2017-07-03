@@ -34,7 +34,15 @@ T clip(const T& n, const T& lower, const T& upper) {
 	return std::max(lower, std::min(n, upper));
 }
 
-class SignalGeneratorAbstract
+class AudioInput
+{
+public:
+	virtual ~AudioInput() {}
+
+	virtual const std::vector<float>& play(int tick) = 0;
+};
+
+class SignalGeneratorAbstract : public AudioInput
 {
 private:
 
@@ -61,7 +69,7 @@ public:
 		
 	}
 
-	std::vector<float>& play(int tick)
+	std::vector<float>& play(int tick) override
 	{
 		if (tick > _curTick)
 		{
@@ -155,7 +163,7 @@ protected:
 	}
 };
 
-class SignalProcessor : public SignalConsumerAbstract
+class SignalProcessor : public SignalConsumerAbstract, public AudioInput
 { 
 protected:
 	std::shared_ptr<SignalGeneratorAbstract> _source;
@@ -177,7 +185,7 @@ public:
 	virtual const std::vector<float>& play(int curTick) = 0;
 };
 
-class ASDRProcessor : public SignalProcessor
+class ADSRProcessor : public SignalProcessor
 {
 	std::shared_ptr<SignalGeneratorAbstract> _attack;
 	std::shared_ptr<SignalGeneratorAbstract> _decay;
@@ -262,10 +270,10 @@ class ASDRProcessor : public SignalProcessor
 		}
 	}
 public:
-	ASDRProcessor(const DSPSettings& settings)
+	ADSRProcessor(const DSPSettings& settings)
 		: SignalProcessor(settings),
-		_deltaT(1.f/settings.sampleRate),
 		_attack(new ConstantGenerator(settings, 0.f)),
+		_deltaT(1.f/settings.sampleRate),
 		_curEnvelope(NONE)
 	{
 	}
@@ -312,5 +320,7 @@ public:
 			SignalProcessor::addSource(source, param);
 		}
 	}
+
+	virtual ~ADSRProcessor(){}
 protected:
 };

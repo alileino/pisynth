@@ -54,6 +54,10 @@ public:
 		cout << this << "Freq bound to " << _freq.get() << endl;
 	}
 
+	void resetPhase()
+	{
+		_phase = 0;
+	}
 
 	void addSource(const shared_ptr<SignalGeneratorAbstract>& source, ParamName param) override
 	{

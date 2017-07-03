@@ -3,6 +3,7 @@
 #include <unordered_set>
 #include "Utils.h"
 #include <ofxMidi.h>
+#include "Oscillator.h"
 
 class MidiDevice : public ofxMidiListener
 {
@@ -13,7 +14,8 @@ class MidiDevice : public ofxMidiListener
 public:
 
 	shared_ptr<ConstantGenerator> gen;
-	shared_ptr<ASDRProcessor> adsr;
+	shared_ptr<ADSRProcessor> adsr;
+	shared_ptr<TableOscillator> osc;
 	
 
 	void newMidiMessage(ofxMidiMessage& msg) override
@@ -54,6 +56,7 @@ public:
 			int last = notesOn.back();
 			float freq = 440.0*pow(2.0, (last - 69.0) / 12.0);
 			gen->setValue(freq);
+			osc->resetPhase();
 			adsr->attack();
 		}
 		else
@@ -65,18 +68,24 @@ public:
 
 
 	explicit MidiDevice(const DSPSettings& settings)
-		: _attack(new ConstantGenerator(settings, 2)),
-		_decay(new ConstantGenerator(settings, 2)),
+		: _attack(new ConstantGenerator(settings, 0.2)),
+		_decay(new ConstantGenerator(settings, 0.5)),
 		_sustain(new ConstantGenerator(settings, 0.5)),
-		_release(new ConstantGenerator(settings, 2)),
+		_release(new ConstantGenerator(settings, 0.3)),
 		gen(new ConstantGenerator(settings, 0)),
-		adsr(new ASDRProcessor(settings))
+		adsr(new ADSRProcessor(settings)),
+		osc(new TableOscillator(settings, 1024))
 	{
 		std::cout << "Construct\n";
 		adsr->addSource(_attack, ATTACK);
 		adsr->addSource(_decay, DECAY);
 		adsr->addSource(_sustain, SUSTAIN);
 		adsr->addSource(_release, RELEASE);
+
+		TableOscillator* myosc = static_cast<TableOscillator*>(osc.get());
+		myosc->addSource(gen, FREQ);
+
+		adsr->addSource(osc, SIGNAL);
 	}
 	MidiDevice() = delete;
 	MidiDevice(MidiDevice const&) = delete;

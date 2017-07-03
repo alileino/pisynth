@@ -2,6 +2,11 @@
 #include "tests.h"
 
 
+void ofApp::exit()
+{
+	_input = make_shared<ConstantGenerator>(_settings, 0.f);
+}
+
 void ofApp::setup() {
 	ofSetLogLevel(OF_LOG_VERBOSE);
 	_settings.sampleRate = 48000;
@@ -14,12 +19,10 @@ void ofApp::setup() {
 //	midiIn.setVerbose(true);
 //	midiIn.addListener(this);
 	_midi.Init(_settings);
+	_input = _midi.getDevice()->adsr;
 //	_osc.reset(new TableOscillatorTest(1024, , 1));
 	ofSoundStreamSetup(2, 0, _settings.sampleRate, _settings.bufferSize, 3);
-	_osc.reset(new TableOscillator(_settings, 1024));
-	TableOscillator* myosc = static_cast<TableOscillator*>(_osc.get());
-	myosc->addSource(_midi.getDevice().get()->gen, FREQ);
-	_midi.getDevice()->adsr->addSource(_osc, SIGNAL);
+
 //	shared_ptr<SignalGeneratorAbstract> osc2(nullptr);
 //	osc2.reset(new TableOscillator(512, samplerate, 512));
 //	static_cast<TableOscillator*>(_osc.get())->addSource(osc2, FREQ);
@@ -66,7 +69,7 @@ void ofApp::audioOut(ofSoundBuffer& buffer) {
 
 	unique_lock<mutex> lock(audioMutex);
 
-	const vector<float>& oscb = _midi.getDevice()->adsr->play(_curTick);
+	const vector<float>& oscb = _input->play(_curTick);
 //		_osc->play(_curTick);
 	for (size_t i = 0; i < buffer.getNumFrames(); i++) {
 		float val = oscb[i%oscb.size()];
