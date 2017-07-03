@@ -47,7 +47,7 @@ public:
 		{
 			notesOn.push_back(msg.pitch);
 		}
-		if(msg.status == MIDI_NOTE_OFF)
+		if(msg.status == MIDI_NOTE_OFF || (msg.status==MIDI_NOTE_ON && msg.velocity==0))
 		{
 			notesOn.erase(find(notesOn.begin(), notesOn.end(), msg.pitch));
 		}
