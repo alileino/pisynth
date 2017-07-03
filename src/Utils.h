@@ -167,10 +167,11 @@ class SignalProcessor : public SignalConsumerAbstract, public AudioInput
 { 
 protected:
 	std::shared_ptr<SignalGeneratorAbstract> _source;
-
+	const DSPSettings& _settings;
 public:
 	SignalProcessor(const DSPSettings& settings)
-		: _source(new ConstantGenerator(settings, 0.f))
+		: _source(new ConstantGenerator(settings, 0.f)),
+		_settings(settings)
 	{}
 
 	virtual ~SignalProcessor()
@@ -181,6 +182,10 @@ public:
 		_source = source;
 	}
 
+	const DSPSettings& getSettings()
+	{
+		return _settings;
+	}
 
 	virtual const std::vector<float>& play(int curTick) = 0;
 };
@@ -194,7 +199,8 @@ class ADSRProcessor : public SignalProcessor
 
 	const float _deltaT;
 	int _curEnvelope = 0;
-	float _phase = 0.f;
+
+	float _curAmplitude = 0;
 	std::vector<float> _silence = {0};
 
 	enum EnvelopePhase
@@ -206,31 +212,38 @@ class ADSRProcessor : public SignalProcessor
 		RELEASE=4
 	};
 
-	int linearApply(std::vector<float>& src, 
+	int newApply(std::vector<float>& src,
 		const std::shared_ptr<SignalGeneratorAbstract>& signal,
-		int curTick, int pos, float k, float intercept)
+		int curTick, int pos,
+		float a0, float at)
 	{
-		std::cout << _curEnvelope << " " << pos << " " << _phase << " k" << k << std::endl;
+
+		std::cout << _curEnvelope << " " << _curAmplitude << std::endl;
 		float value = signal->play(curTick)[0];
-		for (int i = pos; i < src.size(); ++i)
+		float deltaM = (at-a0)*(1.f/(value* _settings.sampleRate));
+		for(int i = pos; i < src.size(); ++i)
 		{
-			if (_phase > value)
+			if ((at - a0)*(at - _curAmplitude) <= 0)
 			{
+				_curAmplitude = at;
 				return i;
 			}
-			float mult = intercept + k*_phase / value;
-			src[i] *= mult;
-			_phase += _deltaT;
+
+			_curAmplitude = _curAmplitude + deltaM;
+			src[i] *= _curAmplitude;
+
 		}
 		return src.size();
+
 	}
 
 	void applySustain(std::vector<float>& src, int curTick, int pos)
 	{
-		const float mult = _sustain->play(curTick)[0];
+		_curAmplitude = _sustain->play(curTick)[0];
+
 		for(int i = pos; i < src.size(); i++)
 		{
-			src[i] *= mult;
+			src[i] *= _curAmplitude;
 		}
 	}
 
@@ -244,21 +257,29 @@ class ADSRProcessor : public SignalProcessor
 			switch(_curEnvelope)
 			{
 			case ATTACK:
-				pos = linearApply(src, _attack, curTick, pos, 1, 0);
+				pos = newApply(src, _attack, curTick, pos, 0, 1);
 				break;
-			case DECAY:
-				pos = linearApply(src, _decay, curTick, pos, -1+_sustain->play(curTick)[0], 1);
+			case DECAY: 
+			{
+				float at = _sustain->play(curTick)[0];
+				if (at > _curAmplitude) {
+					_curEnvelope = ATTACK;
+					continue;
+				}
+				else {
+					pos = newApply(src, _decay, curTick, pos, 1, at);
+				}
 				break;
+			}
 			case SUSTAIN:
 				applySustain(src, curTick, pos);
 				return;
 			case RELEASE:
-				pos = linearApply(src, _release, curTick, pos, -0.5, _sustain->play(curTick)[0]);
+				pos = newApply(src, _release, curTick, pos, _sustain->play(curTick)[0], 0);
 				break;
 			}
 			if(pos < src.size())
 			{
-				_phase = 0;
 				if(_curEnvelope == RELEASE)
 				{
 					std::fill(src.begin() + pos, src.end(), 0);
@@ -280,15 +301,21 @@ public:
 
 	void attack()
 	{
-		_curEnvelope = ATTACK;
+		if (_curAmplitude == 0)
+			_curEnvelope = ATTACK;
+		else 
+			_curEnvelope = DECAY;
 	}
 	
 	void release()
 	{
-		_phase = 0;
 		_curEnvelope = RELEASE;
 	}
 
+	float getAmplitude() const
+	{
+		return _curAmplitude;
+	}
 	const std::vector<float>& play(int curTick) override
 	{
 		if (_curEnvelope != NONE) {
