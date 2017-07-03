@@ -4,6 +4,7 @@
 #include <memory>
 #include <iostream>
 #include <limits>
+#include <vector>
 #ifdef DEBUG
 #define DEBUG_IF(x) if(x)
 #else
