@@ -43,7 +43,7 @@ public:
 
 	void note(ofxMidiMessage& msg)
 	{
-		if(msg.status == MIDI_NOTE_ON)
+		if(msg.status == MIDI_NOTE_ON && msg.velocity > 0)
 		{
 			notesOn.push_back(msg.pitch);
 		}
@@ -112,7 +112,7 @@ class MidiManager
 		void Init(const DSPSettings& settings)
 		{
 			midiIn.listPorts();
-			midiIn.openPort(0);
+			midiIn.openPort(1);
 			midiIn.ignoreTypes(false, false, false);
 			
 			midiIn.setVerbose(true);
