@@ -4,7 +4,10 @@
 
 void ofApp::exit()
 {
+	unique_lock<mutex>(audioMutex);
+
 	_input = make_shared<ConstantGenerator>(_settings, 0.f);
+	ofSoundStreamClose();
 }
 
 void ofApp::setup() {

@@ -56,7 +56,8 @@ public:
 			int last = notesOn.back();
 			float freq = 440.0*pow(2.0, (last - 69.0) / 12.0);
 			gen->setValue(freq);
-			osc->resetPhase();
+			if(adsr->getAmplitude() <= 0)
+				osc->resetPhase();
 			adsr->attack();
 		}
 		else
@@ -68,10 +69,10 @@ public:
 
 
 	explicit MidiDevice(const DSPSettings& settings)
-		: _attack(new ConstantGenerator(settings, 0.2)),
-		_decay(new ConstantGenerator(settings, 0.5)),
-		_sustain(new ConstantGenerator(settings, 0.5)),
-		_release(new ConstantGenerator(settings, 0.3)),
+		: _attack(new ConstantGenerator(settings, 0.1)),
+		_decay(new ConstantGenerator(settings, 0.3)),
+		_sustain(new ConstantGenerator(settings, 0.6)),
+		_release(new ConstantGenerator(settings, 0.5)),
 		gen(new ConstantGenerator(settings, 0)),
 		adsr(new ADSRProcessor(settings)),
 		osc(new TableOscillator(settings, 1024))
