@@ -31,13 +31,7 @@
     <ClCompile Include="..\..\..\addons\ofxMidi\libs\rtmidi\RtMidi.cpp">
       <Filter>addons\ofxMidi\libs\rtmidi</Filter>
     </ClCompile>
-    <ClCompile Include="src\Oscillator.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="src\tests.h">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="src\MidiDevice.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
@@ -107,6 +101,7 @@
     <ClInclude Include="src\MidiDevice.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="src\ADSRPRocessor.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="icon.rc" />

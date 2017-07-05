@@ -4,6 +4,7 @@
 #include "Utils.h"
 #include <ofxMidi.h>
 #include "Oscillator.h"
+#include "ADSRPRocessor.h"
 
 class MidiDevice : public ofxMidiListener
 {
@@ -17,7 +18,6 @@ public:
 	shared_ptr<ADSRProcessor> adsr;
 	shared_ptr<TableOscillator> osc;
 	
-
 	void newMidiMessage(ofxMidiMessage& msg) override
 	{
 		cout << msg.channel << " channel\n";
