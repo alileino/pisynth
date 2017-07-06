@@ -193,6 +193,7 @@
     <ClCompile Include="src\tests.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="MidiBinding.h" />
     <ClInclude Include="src\ADSRPRocessor.h" />
     <ClInclude Include="src\MidiDevice.h" />
     <ClInclude Include="src\Oscillator.h" />
