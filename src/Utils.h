@@ -40,7 +40,7 @@ class AudioInput
 public:
 	virtual ~AudioInput() {}
 
-	virtual const std::vector<float>& play(int tick) = 0;
+	virtual std::vector<float>& play(int tick) = 0;
 };
 
 class SignalGeneratorAbstract : public AudioInput
@@ -129,7 +129,8 @@ public:
 	{
 	}
 
-	virtual void addSource(const std::shared_ptr<SignalGeneratorAbstract>& source, ParamName param) = 0;
+	virtual void addSource(const std::shared_ptr<AudioInput>& source, ParamName param) = 0;
+
 	virtual std::vector<ParamName> getParams() {
 		return std::vector<ParamName>();
 	}
@@ -167,7 +168,7 @@ protected:
 class SignalProcessor : public SignalConsumerAbstract, public AudioInput
 { 
 protected:
-	std::shared_ptr<SignalGeneratorAbstract> _source;
+	std::shared_ptr<AudioInput> _source;
 	const DSPSettings& _settings;
 public:
 	SignalProcessor(const DSPSettings& settings)
@@ -178,7 +179,7 @@ public:
 	virtual ~SignalProcessor()
 	{}
 
-	virtual void addSource(const std::shared_ptr<SignalGeneratorAbstract>& source, ParamName param) override
+	virtual void addSource(const std::shared_ptr<AudioInput>& source, ParamName param) override
 	{
 		_source = source;
 	}
@@ -188,6 +189,30 @@ public:
 		return _settings;
 	}
 
-	virtual const std::vector<float>& play(int curTick) = 0;
+	virtual std::vector<float>& play(int curTick) = 0;
 };
+
+
+class Filter : public SignalProcessor
+{
+	float _last = 0;
+public:
+	explicit Filter(const DSPSettings& settings)
+		: SignalProcessor(settings)
+	{
+	}
+
+	std::vector<float>& play(int curTick) override {
+		std::vector<float>& src = _source->play(curTick);
+		
+		for(int i =  src.size()-1; i > 0; i--)
+		{
+			src[i] = 0.5*src[i] - 0.5*src[i - 1];
+		}
+		src[0] = 0.5*src[0] - 0.5*_last;
+		_last = src.back();
+		return src;
+	}
+};
+
 

@@ -4,10 +4,10 @@
 
 class ADSRProcessor : public SignalProcessor
 {
-	std::shared_ptr<SignalGeneratorAbstract> _attack;
-	std::shared_ptr<SignalGeneratorAbstract> _decay;
-	std::shared_ptr<SignalGeneratorAbstract> _sustain;
-	std::shared_ptr<SignalGeneratorAbstract> _release;
+	std::shared_ptr<AudioInput> _attack;
+	std::shared_ptr<AudioInput> _decay;
+	std::shared_ptr<AudioInput> _sustain;
+	std::shared_ptr<AudioInput> _release;
 
 	const float _deltaT;
 	int _curEnvelope = 0;
@@ -25,7 +25,7 @@ class ADSRProcessor : public SignalProcessor
 	};
 
 	int newApply(std::vector<float>& src,
-		const std::shared_ptr<SignalGeneratorAbstract>& signal,
+		const std::shared_ptr<AudioInput>& signal,
 		int curTick, int pos,
 		float a0, float at)
 	{
@@ -128,7 +128,7 @@ public:
 	{
 		return _curAmplitude;
 	}
-	const std::vector<float>& play(int curTick) override
+	std::vector<float>& play(int curTick) override
 	{
 		if (_curEnvelope != NONE) {
 			std::vector<float>& src = _source->play(curTick);
@@ -139,7 +139,7 @@ public:
 	}
 
 
-	void addSource(const std::shared_ptr<SignalGeneratorAbstract>& source, ParamName param) override {
+	void addSource(const std::shared_ptr<AudioInput>& source, ParamName param) override {
 
 		switch (param)
 		{

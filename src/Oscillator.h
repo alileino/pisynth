@@ -30,7 +30,7 @@ private:
 	float _sr;
 	vector<float>* _current;
 
-	shared_ptr<SignalGeneratorAbstract> _freq;
+	shared_ptr<AudioInput> _freq;
 
 
 	static ConstantGenerator defaultFrequency;
@@ -59,7 +59,7 @@ public:
 		_phase = 0;
 	}
 
-	void addSource(const shared_ptr<SignalGeneratorAbstract>& source, ParamName param) override
+	void addSource(const std::shared_ptr<AudioInput>& source, ParamName param) override
 	{
 		_freq = source;
 		cout << this << "Freq REbound to " << (_freq.get()) << endl;

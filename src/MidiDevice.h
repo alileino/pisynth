@@ -14,6 +14,7 @@ class MidiDevice : public ofxMidiListener
 	shared_ptr<ConstantGenerator> _release;
 public:
 
+	shared_ptr<Filter> _filter;
 	shared_ptr<ConstantGenerator> gen;
 	shared_ptr<ADSRProcessor> adsr;
 	shared_ptr<TableOscillator> osc;
@@ -75,7 +76,8 @@ public:
 		_release(new ConstantGenerator(settings, 0.5)),
 		gen(new ConstantGenerator(settings, 0)),
 		adsr(new ADSRProcessor(settings)),
-		osc(new TableOscillator(settings, 1024))
+		osc(new TableOscillator(settings, 1024)),
+		_filter(new Filter(settings))
 	{
 		std::cout << "Construct\n";
 		adsr->addSource(_attack, ATTACK);
@@ -85,8 +87,9 @@ public:
 
 		TableOscillator* myosc = static_cast<TableOscillator*>(osc.get());
 		myosc->addSource(gen, FREQ);
-
+		
 		adsr->addSource(osc, SIGNAL);
+		_filter->addSource(adsr, SIGNAL);
 	}
 	MidiDevice() = delete;
 	MidiDevice(MidiDevice const&) = delete;

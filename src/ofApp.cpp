@@ -22,7 +22,7 @@ void ofApp::setup() {
 //	midiIn.setVerbose(true);
 //	midiIn.addListener(this);
 	_midi.Init(_settings);
-	_input = _midi.getDevice()->adsr;
+	_input = _midi.getDevice()->_filter;
 //	_osc.reset(new TableOscillatorTest(1024, , 1));
 	ofSoundStreamSetup(2, 0, _settings.sampleRate, _settings.bufferSize, 3);
 

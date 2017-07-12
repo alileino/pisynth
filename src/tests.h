@@ -3,6 +3,7 @@
 
 class TableOscillatorTest : public SignalGeneratorAbstract
 {
+
 protected:
 	void produce(std::vector<float>& dest, int curTick) override
 	{
